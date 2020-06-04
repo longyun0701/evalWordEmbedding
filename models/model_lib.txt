@@ -1,0 +1,4 @@
+Word2Vec_SG:wv_Word2Vec_SG.npz
+Word2Vec_CBOW:wv_Word2Vec_CBOW.npz
+FastText:wv_FastText.npz
+GloVe:wv_GloVe.npz
