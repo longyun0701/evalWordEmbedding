@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-The module is to evaluation word embeddings
+The module is to evaluate word embeddings
 Benchmarks can be (1) word similarity (2) word analogy (3) outlier detection
-and can be specified by user in the test_data file
-If not specified, the benchmark is just how many words have representation, or 
+and can be specified by user in the test data file
+If not specified, the benchmark is just how many words have a representation, or 
 (4) existence checking
 
 Created on Wed Jun  3 22:07:51 2020
@@ -52,7 +52,7 @@ print(dashline+'\nAll model parameters have been loaded!\n'+dashline+'\n')
 ##################################################################
 # Part 2: Function definitions for 3 types of Evaluation :       #
 # namely, 'word similarity', 'word analogy', 'outlier detection' #
-# if benchmark not specified, then 'existence test' will be done #
+# if benchmark not specified, then 'existence' test will be done #
 ##################################################################
 
 # Part 2.1 Similarity test function
@@ -331,7 +331,7 @@ def existTest(test_data):
 # Part 3: Read in test data file, evaluate models, and report    #
 ##################################################################
 
-# Mapping the recognizable string for test type with the testing functions
+# Mapping the recognizable string for test type with the testing functions defined in Part 2
 tests = {'!similarity': similarityTest,
          '!analogy': analogyTest,
          '!outlier': outlierTest,
