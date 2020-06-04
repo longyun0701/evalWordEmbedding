@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-The module is to evaluate word embeddings
+The module is to evaluation word embeddings
 Benchmarks can be (1) word similarity (2) word analogy (3) outlier detection
-and can be specified by user in the test data file
-If not specified, the benchmark is just how many words have a representation, or 
+and can be specified by user in the test_data file
+If not specified, the benchmark is just how many words have representation, or 
 (4) existence checking
 
 Created on Wed Jun  3 22:07:51 2020
-Version 1, completed on Thu Jun  4 17:16:01 2020
+Version 1, completed on Thu Jun  5 3:25:01 2020
  
 @author: Dr. Long Yun, longyun0701@hotmail.com
 
@@ -46,13 +46,14 @@ for model in model_lib:
     wv = {w[ikey]:v[ikey] for ikey in range(len(w))}
     model_dicts.append(wv)
     print(model_name.rjust(15) + ": word embedding parameters loaded OK!")
+n_models = len(model_names)
 print(dashline+'\nAll model parameters have been loaded!\n'+dashline+'\n')
 
 
 ##################################################################
 # Part 2: Function definitions for 3 types of Evaluation :       #
 # namely, 'word similarity', 'word analogy', 'outlier detection' #
-# if benchmark not specified, then 'existence' test will be done #
+# if benchmark not specified, then 'existence test' will be done #
 ##################################################################
 
 # Part 2.1 Similarity test function
@@ -90,24 +91,29 @@ def similarityTest(test_data):
     for i_wv in range(len(model_names)):             # Loop over all models
         wv_name = model_names[i_wv]
         wv_dict = model_dicts[i_wv]
-        n_test, n_avail, n_good = 0, 0, 0           # Accumulating for #_test, #_existing repr, #_good repr
+        n_test = 0           # Accumulating for # of valid test
         
+        word1_arr, word2_arr, Hsim_arr = [], [], []
         for test in test_data[1:]:                  # For each model, loop over all test questions
             if not test[0].isalpha(): continue
             n_test += 1
-            word1, word2, H_sim = tuple(test.strip().split())
-            H_sim = float(H_sim)/H_scale
+            word1, word2, H_sim = tuple(test.strip().split())          
 
             if word1 in wv_dict and word2 in wv_dict:  
                 # Only when both words in a question exist in a model, we consider repr exists
-                n_avail += 1
-                wv1 = wv_dict[word1]
-                wv2 = wv_dict[word2]
-                
-                # Check cosine similarity of two word vectors, if close to human label, count as a good one
-                pred_sim = wv1.dot(wv2) / np.sqrt(np.sum(wv1**2) * np.sum(wv2**2)) 
-                if np.abs(H_sim - pred_sim) < 0.2:
-                    n_good += 1
+                word1_arr.append(wv_dict[word1])
+                word2_arr.append(wv_dict[word2])
+                Hsim_arr.append(float(H_sim)/H_scale)
+
+        # To take advantage of vectorization, create wv1, wv2, H_sim to store all 'available' tests     
+        wv1 = np.array(word1_arr)   # word vectors for word1 in all tests
+        wv2 = np.array(word2_arr)   # word vectors for word2 in all tests
+        H_sim = np.array(Hsim_arr)  # human score for all tests
+        n_avail = len(H_sim)        # number of 'available' tests (there is a representation)
+
+        # Check cosine similarity of all pairs of word vectors
+        pred_sim = np.sum(wv1 * wv2, axis = 1) / np.sqrt(np.sum(wv1**2, axis = 1) * np.sum(wv2**2, axis = 1)) 
+        n_good = np.sum(np.abs(H_sim - pred_sim) < 0.2)  # count as good if |human-pred|<0.2
         
         X, Y = n_avail/n_test*100, n_good/n_avail*100
         if X*Y > XYm:  # update the 'best' model if the current one is 'better'
@@ -116,7 +122,6 @@ def similarityTest(test_data):
             best_model = i_wv
         print(wv_name.rjust(15), str(n_test).rjust(8), str(n_avail).rjust(8),'(%5.1f' % X +'%)', str(n_good).rjust(8), '(%5.1f' % Y +'%)')
     return best_model, Xm, Ym
-
 
 
 # Part 2.2 Analogy test function
@@ -148,7 +153,7 @@ def analogyTest(test_data):
     """
     
     print('Warning: Analogy Test is computationally expensive.')
-    print('It may take 3-10 min per model, or a total of 15-30 min for all 4 models.\n')
+    print('It may take ~2 min per model, or totally ' + str(n_models*2) + ' min for all '+ str(n_models) +' models.\n')
     print('model'.rjust(15), 'n_test'.rjust(8), 'n_avail (X%)'.center(18), 'n_good (Y%)'.center(18))
     print(dashline)
 
@@ -161,7 +166,8 @@ def analogyTest(test_data):
         wv_vectors = model_vectors[i_wv]
         wv_keys = model_keys[i_wv]
 
-        n_test, n_avail, n_good = 0, 0, 0           # Accumulating for #_test, #_existing repr, #_good repr
+        n_test = 0           # Accumulating for #_test
+        word1_arr, word2_arr, word3_arr, word4_arr = [], [], [], []
         
         for test in test_data[1:]:                  # For each model, loop over all test questions
             if not test[0].isalpha(): continue 
@@ -169,17 +175,25 @@ def analogyTest(test_data):
             word1, word2, word3, word4 = tuple(test.strip().split())
 
             if word1 in wv_dict and word2 in wv_dict and word3 in wv_dict and word4 in wv_dict:
-                
                 # Only when all words in a question exist in a model, we consider repr exists
-                # We apply 3CosAdd, using Eq(9) of Ref: Wang, "Evaluating word embedding models", 
-                # as 3CosMul or Eq(10) gave poorer performance
-                
-                n_avail += 1
-                wv1, wv2, wv3 = wv_dict[word1], wv_dict[word2], wv_dict[word3]
-                V = wv2 - wv1 + wv3
-                argmax = np.argmax(np.sum(wv_vectors*V,axis = 1) / np.sqrt(np.sum(wv_vectors**2,axis = 1) * np.sum(V**2)) )
-                if wv_keys[argmax] == word4:
-                    n_good += 1
+                word1_arr.append(wv_dict[word1])
+                word2_arr.append(wv_dict[word2])
+                word3_arr.append(wv_dict[word3])
+                word4_arr.append(word4)   # for word4, we only need to know its string form for answer check
+
+        #  To take advantage of vectorization, create wv1, wv2, wv3, wv4 to store all 'available' tests     
+        wv1 = np.array(word1_arr)   # word vectors for word1 in all tests
+        wv2 = np.array(word2_arr)   # word vectors for word2 in all tests
+        wv3 = np.array(word3_arr)   # word vectors for word3 in all tests
+        wv4 = np.array(word4_arr)   # word vectors for word4 in all tests                
+        n_avail = len(wv1)          # number of 'available' tests (there is a representation)
+        
+        # We apply 3CosAdd, using Eq(9) of Ref: Wang, "Evaluating word embedding models", 
+        # as 3CosMul or Eq(10) gave poorer performance 
+        V = wv2 - wv1 + wv3
+        argmax = np.argmax( wv_vectors.dot(V.T) / np.sqrt(np.sum(wv_vectors**2,axis = 1).reshape(-1,1).dot(np.sum(V**2, axis = 1).reshape(1,-1))), axis = 0)
+        n_good = np.sum(wv_keys[argmax] == wv4)
+            
         X, Y = n_avail/n_test*100, n_good/n_avail*100
         if X*Y > XYm:  # update the 'best' model if the current one is 'better'
             XYm = X*Y
@@ -331,7 +345,7 @@ def existTest(test_data):
 # Part 3: Read in test data file, evaluate models, and report    #
 ##################################################################
 
-# Mapping the recognizable string for test type with the testing functions defined in Part 2
+# Mapping the recognizable string for test type with the testing functions
 tests = {'!similarity': similarityTest,
          '!analogy': analogyTest,
          '!outlier': outlierTest,
@@ -356,7 +370,7 @@ if len(sys.argv) == 2:           # Test data file must be input as argv[1]
         # For existence checking, an exisiting repr is a good repr, i.e., X=Y
             
         print(dashline)
-        print('The Best model on the given data set is: '+ model_names[best_model])
+        print('The BEST model on the given data set is: '+ model_names[best_model])
         print('As there are representations for X = %.1f' % X  +'%' +' of the testing questions,')
         print('and Y = %.1f' % Y +'%' + ' good representations if there is a representation.' )
     else:
