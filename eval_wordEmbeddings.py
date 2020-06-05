@@ -6,6 +6,14 @@ and can be specified by user in the test_data file
 If not specified, the benchmark is just how many words have representation, or 
 (4) existence checking
 
+Quick start example: (Execute an example using the following line)
+
+python eval_wordEmbeddings.py Test_similarity.txt
+
+('Test_similarity.txt' is a test data file located in 'testdata/'.
+  Users can pick up any .txt files located in that directory to run the test.
+  Users can also prepare their own test file. Refer to README.pdf for a guide.)
+
 Created on Wed Jun  3 22:07:51 2020
 Version 1, completed on Thu Jun  5 3:25:01 2020
  
@@ -66,7 +74,7 @@ def similarityTest(test_data):
             each of which contain 2 words and a human-labeled similarity score
     
     Parameter(s):
-        test_data: a txt file, whose 1st line indicate 'similarity' test, and the scale of the similarity score
+        test_data: a list, readlines from a txt file, whose 1st line indicate 'similarity' test, and the scale of the similarity score
                    From 2nd line, each line contains 4 words and a human-labeled similarity score
                    Any line NOT starting with an English letter will be ignored
                    
@@ -136,7 +144,7 @@ def analogyTest(test_data):
             The question is: given a, a* and b, can the models predict correct b*?
     
     Parameter(s):
-        test_data: a txt file, whose 1st line indicate 'analogy' test
+        test_data: a list, readlines from a txt file, whose 1st line indicate 'analogy' test
                    From 2nd line, each line contains 4 words, a, a*, b, b* with analogy relations
                    Any line NOT starting with an English letter will be ignored
     Return(s):
@@ -214,7 +222,7 @@ def outlierTest(test_data):
             the number is 1-base index of 'outlier' word, which is least compatible in the group
     
     Parameter(s):
-        test_data: a txt file, whose 1st line indicate 'outlier' test
+        test_data: a list, readlines from a txt file, whose 1st line indicate 'outlier' test
                    From 2nd line, each line contains a few words and a number (the answer)
                    Any line NOT starting with an English letter will be ignored
     Return(s):
@@ -302,7 +310,7 @@ def existTest(test_data):
             Only words of pure alphatetic (without any special char) are considered.
     
     Parameter(s):
-        test_data: a txt file, whose 1st line DOES NOT indicate a benchmark.
+        test_data: a list, readlines from a txt file, whose 1st line DOES NOT indicate a benchmark.
                    The content are split into segments by white space. 
                    Any segments with special characters will be ignored.
     Return(s):
@@ -351,7 +359,7 @@ tests = {'!similarity': similarityTest,
          '!outlier': outlierTest,
          '!existence': existTest}
 
-if len(sys.argv) == 2:           # Test data file must be input as argv[1]
+if len(sys.argv) > 1:           # Test data file must be input as argv[1], more arguements will be ignored
     path = os.getcwd() + '/testdata'
     all_files = [f for f in os.listdir(path)]
     if sys.argv[1] in all_files:
