@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-The module is to evaluation word embeddings
+The module is to evaluate word embeddings
 Benchmarks can be (1) word similarity (2) word analogy (3) outlier detection
 and can be specified by user in the test_data file
 If not specified, the benchmark is just how many words have representation, or 
@@ -74,14 +74,14 @@ def similarityTest(test_data):
             each of which contain 2 words and a human-labeled similarity score
     
     Parameter(s):
-        test_data: a list, readlines from a txt file, whose 1st line indicate 'similarity' test, and the scale of the similarity score
-                   From 2nd line, each line contains 4 words and a human-labeled similarity score
-                   Any line NOT starting with an English letter will be ignored
+        test_data: list, readlines from a txt file, whose 1st line indicates '!similarity' test, and the scale of the similarity score
+                   From 2nd line, each line contains 2 words and a human-labeled similarity score
+                   Any line NOT starting with an English letter (special char) will be ignored
                    
     Return(s):
-        best_model: index of the model which is evaluated the 'best' among all embeddings
-        Xm: For the 'best' model, X% is the fraction of the existing representations in all test questions 
-        Ym: For the 'best' model, Y% is the fraction of a 'good' representation when a representation exist
+        best_model: int, index of the model which is evaluated the 'best' among all embeddings
+        Xm: float, For the 'best' model, X% is the fraction of the existing representations in all test questions 
+        Ym: float, For the 'best' model, Y% is the fraction of a 'good' representation when a representation exist
             ( a 'good' representation is interpreted as: |pred_similarity - human_similarity| < 0.2 )
         The model with highest X*Y is the 'best' model 
     
@@ -96,12 +96,14 @@ def similarityTest(test_data):
     H_scale = float(test_data[0].strip().split()[1]) # Get the scale of human-labeled similarity score
     best_model = 0
     XYm = 0
+    
     for i_wv in range(len(model_names)):             # Loop over all models
         wv_name = model_names[i_wv]
         wv_dict = model_dicts[i_wv]
         n_test = 0           # Accumulating for # of valid test
         
         word1_arr, word2_arr, Hsim_arr = [], [], []
+        
         for test in test_data[1:]:                  # For each model, loop over all test questions
             if not test[0].isalpha(): continue
             n_test += 1
@@ -144,13 +146,13 @@ def analogyTest(test_data):
             The question is: given a, a* and b, can the models predict correct b*?
     
     Parameter(s):
-        test_data: a list, readlines from a txt file, whose 1st line indicate 'analogy' test
+        test_data: list, readlines from a txt file, whose 1st line indicates '!analogy' test
                    From 2nd line, each line contains 4 words, a, a*, b, b* with analogy relations
                    Any line NOT starting with an English letter will be ignored
     Return(s):
-        best_model: index of the model which is evaluated the 'best' among all embeddings
-        Xm: For the 'best' model, X% is the fraction of the existing representations in all test questions 
-        Ym: For the 'best' model, Y% is the fraction of a 'good' representation when a representation exist
+        best_model: int, index of the model which is evaluated the 'best' among all embeddings
+        Xm: float, For the 'best' model, X% is the fraction of the existing representations in all test questions 
+        Ym: float, For the 'best' model, Y% is the fraction of a 'good' representation when a representation exist
             ( a 'good' representation is interpreted as: pred_b* == human_b* )
         The model with highest X*Y is the 'best' model 
     
@@ -222,13 +224,13 @@ def outlierTest(test_data):
             the number is 1-base index of 'outlier' word, which is least compatible in the group
     
     Parameter(s):
-        test_data: a list, readlines from a txt file, whose 1st line indicate 'outlier' test
-                   From 2nd line, each line contains a few words and a number (the answer)
+        test_data: list, readlines from a txt file, whose 1st line indicate '!outlier' test
+                   From 2nd line, each line contains a few words and an integer number (index of the answer)
                    Any line NOT starting with an English letter will be ignored
     Return(s):
-        best_model: index of the model which is evaluated the 'best' among all embeddings
-        Xm: For the 'best' model, X% is the fraction of the existing representations in all test questions 
-        Ym: For the 'best' model, Y% is the fraction of a 'good' representation when a representation exist
+        best_model: int, index of the model which is evaluated the 'best' among all embeddings
+        Xm: float, For the 'best' model, X% is the fraction of the existing representations in all test questions 
+        Ym: float, For the 'best' model, Y% is the fraction of a 'good' representation when a representation exist
             ( a 'good' representation is interpreted as the pred_outlier == human_outlier )
         The model with highest X*Y is the 'best' model 
     
@@ -310,12 +312,12 @@ def existTest(test_data):
             Only words of pure alphatetic (without any special char) are considered.
     
     Parameter(s):
-        test_data: a list, readlines from a txt file, whose 1st line DOES NOT indicate a benchmark.
-                   The content are split into segments by white space. 
+        test_data: list, readlines from a txt file, whose 1st line DOES NOT indicate a benchmark.
+                   Each line (content) is split into segments by white space. 
                    Any segments with special characters will be ignored.
     Return(s):
-        best_model: index of the model which is evaluated the 'best' among all embeddings
-        Xm: For the 'best' model, X% is the fraction of the existing representations in all test questions
+        best_model: int, index of the model which is evaluated the 'best' among all embeddings
+        Xm: float, For the 'best' model, X% is the fraction of the existing representations in all test questions
         The model with highest X is the 'best' model 
     
       
